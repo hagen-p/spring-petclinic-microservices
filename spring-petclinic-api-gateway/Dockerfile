@@ -1,31 +1,28 @@
-FROM  eclipse-temurin:17 AS builder
+FROM  --platform=amd64 eclipse-temurin:17 AS builder
 WORKDIR /application
-
 ARG ARTIFACT_NAME
 ARG DOCKERIZE_VERSION
-ARG TARGETARCH
-
 COPY target/${ARTIFACT_NAME}.jar application.jar
 RUN java -Djarmode=layertools -jar application.jar extract
 
 # Download dockerize and cache that layer
-
-RUN wget -O dockerize.tar.gz https://github.com/jwilder/dockerize/releases/download/${DOCKERIZE_VERSION}/dockerize-darwin-${TARGETARCH}-${DOCKERIZE_VERSION}.tar.gz
+ARG DOCKERIZE_VERSION
+RUN wget -O dockerize.tar.gz https://github.com/jwilder/dockerize/releases/download/${DOCKERIZE_VERSION}/dockerize-alpine-linux-amd64-${DOCKERIZE_VERSION}.tar.gz
 RUN tar xzf dockerize.tar.gz
 RUN chmod +x dockerize
 
-FROM  eclipse-temurin:17
+FROM  --platform=amd64 eclipse-temurin:17
 
 WORKDIR /application
 
 # Dockerize
 COPY --from=builder /application/dockerize ./
 
-#RUN mkdir -p /opt/otel
+RUN mkdir -p /opt/otel
 #WORKDIR /opt/otel
 #RUN curl -L https://github.com/signalfx/splunk-otel-java/releases/download/v1.30.0/splunk-otel-javaagent-all.jar -o splunk-otel-javaagent-all.jar
 
-#ARG EXPOSED_PORT
+ARG EXPOSED_PORT
 EXPOSE 8080
 
 ENV SPRING_PROFILES_ACTIVE=docker
